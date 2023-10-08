@@ -1,0 +1,62 @@
+plugins {
+    id 'groovy'
+    id 'groovy-gradle-plugin'
+    id 'idea'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.groovy:groovy-all:4.0.14'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+interface GradlePluginExtension {
+    @Input Property<String> getClassName()
+    @Input Property<String> getRootDir()
+    @Input Property<String> getPackageName()
+}
+
+class GradlePlugin implements Plugin<Project> {
+    @Override
+    void apply(Project project) {
+        def extension = project.extensions.create('generate', GradlePluginExtension)
+        project.task('customTask') {
+            doFirst {
+                println extension.className.get()
+                println extension.rootDir.get()
+                println extension.packageName.get()
+            }
+        }
+    }
+}
+
+apply plugin: GradlePlugin
+
+def compileTask = project.tasks.getByName('compileGroovy')
+compileTask.dependsOn('customTask')
+
+generate {
+    className = "Main"
+    packageName = "ru.otus"
+    rootDir = "./codeGen/"
+    sourceSets{
+        codegen {
+            groovy {
+                srcDirs(rootDir)
+            }
+        }
+    }
+}
+
+sourceSets.each {println(it)}
